@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <property name="now" value="now()" dbms="mysql"/>
+    <property name="floatType" value="float" dbms="mysql"/>
+    <property name="clobType" value="clob" dbms="mysql"/>
+    <property name="blobType" value="longblob" dbms="mysql"/>
+    <property name="uuidType" value="varchar(36)" dbms="mysql"/>
+    <property name="datetimeType" value="datetime(6)" dbms="mysql"/>
+
+    <include file="config/liquibase/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014251_added_entity_Category.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014252_added_entity_Publisher.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014253_added_entity_Book.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014254_added_entity_PurchaseOrder.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014255_added_entity_PurchaseOrderLine.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014256_added_entity_SalesOrder.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014257_added_entity_SalesOrderLine.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014258_added_entity_InventoryBalance.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014259_added_entity_InventoryTransaction.xml" relativeToChangelogFile="false"/>
+    <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20260504014253_added_entity_constraints_Book.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014254_added_entity_constraints_PurchaseOrder.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014255_added_entity_constraints_PurchaseOrderLine.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014256_added_entity_constraints_SalesOrder.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014257_added_entity_constraints_SalesOrderLine.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014258_added_entity_constraints_InventoryBalance.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504014259_added_entity_constraints_InventoryTransaction.xml" relativeToChangelogFile="false"/>
+    <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
+    <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20260504143600_update_user.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504143700_update_book.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260504143800_update_publisher.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260506153800_add_unique_constraint_to_category.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260506161600_update_default_users_status.xml" relativeToChangelogFile="false"/>
+</databaseChangeLog>

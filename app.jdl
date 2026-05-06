@@ -1,0 +1,133 @@
+/**
+ * NovelSync ERP - JDL Configuration cho JHipster v7.9.4
+ */
+entity Category {
+     title String required maxlength(255),
+     desc String maxlength(255)
+}
+
+// --- PHÂN HỆ MASTER DATA ---
+
+entity Publisher {
+    code String required unique maxlength(20),
+    name String required maxlength(255),
+    address String maxlength(500),
+    phone String maxlength(20)
+}
+
+entity Book {
+    code String required unique maxlength(20),
+    title String required maxlength(255),
+    author String maxlength(255),
+    retailPrice BigDecimal
+}
+
+// --- PHÂN HỆ NHẬP HÀNG (PUR) ---
+
+entity PurchaseOrder {
+    code String required unique maxlength(50),
+    status PurchaseStatus,
+    totalAmount BigDecimal,
+    createdAt Instant
+}
+
+enum PurchaseStatus {
+    DRAFT, COMPLETED
+}
+
+entity PurchaseOrderLine {
+    quantity Integer required min(1),
+    unitCost BigDecimal
+}
+
+// --- PHÂN HỆ BÁN HÀNG (SD) ---
+
+entity SalesOrder {
+    code String required unique maxlength(50),
+    status SalesStatus,
+    totalAmount BigDecimal,
+    createdAt Instant
+}
+
+enum SalesStatus {
+    DRAFT, COMPLETED, CANCELLED
+}
+
+entity SalesOrderLine {
+    quantity Integer required min(1),
+    unitPrice BigDecimal
+}
+
+// --- PHÂN HỆ TỒN KHO (INV) ---
+
+entity InventoryBalance {
+    quantityOnHand Integer required min(0),
+    updatedAt Instant
+}
+
+entity InventoryTransaction {
+    transactionType TransactionType required,
+    quantity Integer required,
+    referenceType ReferenceType,
+    referenceId Long,
+    createdAt Instant
+}
+
+enum TransactionType {
+    IN, OUT
+}
+
+enum ReferenceType {
+    PO, SO
+}
+
+// --- ĐỊNH NGHĨA MỐI QUAN HỆ (RELATIONSHIPS) ---
+
+relationship ManyToMany {
+    // Chuyển sang song hướng để Category biết các Book thuộc về nó (Luồng 2.2)
+    Book{category(title)} to Category{book}
+}
+
+relationship OneToOne {
+    /**
+     * Phân hệ INV: Quan hệ 1-1 giữa InventoryBalance và Book
+     * jpaDerivedIdentifier giúp book_id vừa là PK vừa là FK
+     */
+    InventoryBalance{book(title)} to Book with jpaDerivedIdentifier
+}
+
+relationship OneToMany {
+    // Luồng 3: Một Publisher có nhiều Book. Song hướng giúp thống kê sách theo NXB.
+    Publisher{book} to Book{publisher(name)},
+
+    // Luồng 4: Một Đơn nhập có nhiều dòng chi tiết. Bắt buộc để load dữ liệu khi sửa phiếu Nháp.
+    PurchaseOrder{line} to PurchaseOrderLine{purchaseOrder(code)},
+
+    // Luồng 5: Một Đơn bán có nhiều dòng chi tiết.
+    SalesOrder{line} to SalesOrderLine{salesOrder(code)}
+}
+
+relationship ManyToOne {
+    // Liên kết với hệ thống User giữ nguyên
+    PurchaseOrder{user(login)} to User,
+    SalesOrder{user(login)} to User,
+
+    // Tra cứu thông tin sách trong các dòng chi tiết
+    PurchaseOrderLine{book(title)} to Book,
+    SalesOrderLine{book(title)} to Book,
+
+    // Giao dịch kho trỏ về sách
+    InventoryTransaction{book(title)} to Book
+}
+
+// --- CẤU HÌNH HỆ THỐNG ---
+
+// Sử dụng Service Implementation
+service all with serviceImpl
+
+// Phân trang
+paginate all with pagination
+
+// Lọc dữ liệu nâng cao
+filter Book, PurchaseOrder, SalesOrder, InventoryTransaction
+dto * with mapstruct // Khuyến nghị dùng DTO để xử lý vòng lặp JSON khi dùng quan hệ song hướng

@@ -1,0 +1,37 @@
+{
+  "applications": "*",
+  "changelogDate": "20260504014258",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "inventory_balance",
+  "fields": [
+    {
+      "fieldName": "quantityOnHand",
+      "fieldType": "Integer",
+      "fieldValidateRules": ["required", "min"],
+      "fieldValidateRulesMin": "0"
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "name": "InventoryBalance",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "id": true,
+      "javadoc": "Phân hệ INV: Quan hệ 1-1 giữa InventoryBalance và Book\\njpaDerivedIdentifier giúp book_id vừa là PK vừa là FK",
+      "otherEntityField": "title",
+      "otherEntityName": "book",
+      "ownerSide": true,
+      "relationshipName": "book",
+      "relationshipType": "one-to-one",
+      "useJPADerivedIdentifier": true
+    }
+  ],
+  "service": "serviceImpl"
+}

@@ -1,0 +1,9 @@
+{
+  "cloneNovelSyncApp": {
+    "PurchaseStatus": {
+      "null": "",
+      "DRAFT": "DRAFT",
+      "COMPLETED": "COMPLETED"
+    }
+  }
+}

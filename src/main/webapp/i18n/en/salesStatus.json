@@ -1,0 +1,10 @@
+{
+  "cloneNovelSyncApp": {
+    "SalesStatus": {
+      "null": "",
+      "DRAFT": "DRAFT",
+      "COMPLETED": "COMPLETED",
+      "CANCELLED": "CANCELLED"
+    }
+  }
+}
