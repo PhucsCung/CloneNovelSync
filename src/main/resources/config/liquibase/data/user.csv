@@ -1,5 +1,5 @@
-id;login;password_hash;first_name;last_name;email;image_url;activated;lang_key;created_by;last_modified_by
-1;admin;$2a$10$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC;Administrator;Administrator;admin@localhost;;true;en;system;system
-2;user;$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K;User;User;user@localhost;;true;en;system;system
-3;thukho;$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K;Thu;Kho;thukho@localhost;;true;en;system;system
-4;salesman;$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K;Sales;Man;sales@localhost;;true;en;system;system
+id;login;password_hash;first_name;last_name;email;image_url;activated;lang_key;created_by;created_date;last_modified_by;last_modified_date;authority_name
+1;admin;$2a$10$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC;Administrator;Administrator;admin@localhost;;true;en;system;2026-05-04 14:36:00;system;2026-05-04 14:36:00;ROLE_ADMIN
+2;user;$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K;User;User;user@localhost;;true;en;system;2026-05-04 14:36:00;system;2026-05-04 14:36:00;ROLE_USER
+3;thukho;$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K;Thu;Kho;thukho@localhost;;true;en;system;2026-05-04 14:36:00;system;2026-05-04 14:36:00;ROLE_USER
+4;salesman;$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K;Sales;Man;sales@localhost;;true;en;system;2026-05-04 14:36:00;system;2026-05-04 14:36:00;ROLE_USER

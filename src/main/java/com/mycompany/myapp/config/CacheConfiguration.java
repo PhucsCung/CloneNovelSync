@@ -80,7 +80,6 @@ public class CacheConfiguration {
             createCache(cm, com.mycompany.myapp.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.Authority.class.getName(), jcacheConfiguration);
-            createCache(cm, com.mycompany.myapp.domain.User.class.getName() + ".authorities", jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.Category.class.getName(), jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.Category.class.getName() + ".books", jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.Publisher.class.getName(), jcacheConfiguration);

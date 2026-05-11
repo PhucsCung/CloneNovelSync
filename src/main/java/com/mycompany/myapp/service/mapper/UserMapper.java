@@ -53,29 +53,32 @@ public class UserMapper {
             user.setImageUrl(userDTO.getImageUrl());
             user.setActivated(userDTO.isActivated());
             user.setLangKey(userDTO.getLangKey());
-            Set<Authority> authorities = this.authoritiesFromStrings(userDTO.getAuthorities());
-            user.setAuthorities(authorities);
+            if (userDTO.getAuthority() != null) {
+                Authority auth = new Authority();
+                auth.setName(userDTO.getAuthority());
+                user.setAuthority(auth);
+            }
             return user;
         }
     }
 
-    private Set<Authority> authoritiesFromStrings(Set<String> authoritiesAsString) {
-        Set<Authority> authorities = new HashSet<>();
-
-        if (authoritiesAsString != null) {
-            authorities =
-                authoritiesAsString
-                    .stream()
-                    .map(string -> {
-                        Authority auth = new Authority();
-                        auth.setName(string);
-                        return auth;
-                    })
-                    .collect(Collectors.toSet());
-        }
-
-        return authorities;
-    }
+//    private Set<Authority> authoritiesFromStrings(Set<String> authoritiesAsString) {
+//        Set<Authority> authorities = new HashSet<>();
+//
+//        if (authoritiesAsString != null) {
+//            authorities =
+//                authoritiesAsString
+//                    .stream()
+//                    .map(string -> {
+//                        Authority auth = new Authority();
+//                        auth.setName(string);
+//                        return auth;
+//                    })
+//                    .collect(Collectors.toSet());
+//        }
+//
+//        return authorities;
+//    }
 
     public User userFromId(Long id) {
         if (id == null) {

@@ -131,7 +131,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         for (SalesOrderLine line : lines) {
             Long bookId = line.getBook().getId();
             InventoryBalance balance = inventoryBalanceRepository
-                .findByBookId(bookId)
+                .findLockedByBookId(bookId)
                 .orElseThrow(() -> new BadRequestAlertException("Sách không có trong kho", "salesOrder", "outofstock"));
 
             if (balance.getQuantityOnHand() < line.getQuantity()) {
@@ -146,7 +146,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         for (SalesOrderLine line : lines) {
             Long bookId = line.getBook().getId();
 
-            InventoryBalance balance = inventoryBalanceRepository.findByBookId(bookId).get();
+            InventoryBalance balance = inventoryBalanceRepository.findLockedByBookId(bookId).get();
             balance.setQuantityOnHand(balance.getQuantityOnHand() - line.getQuantity());
             inventoryBalanceRepository.save(balance);
 

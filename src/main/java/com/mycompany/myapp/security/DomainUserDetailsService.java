@@ -38,14 +38,14 @@ public class DomainUserDetailsService implements UserDetailsService {
 
         if (new EmailValidator().isValid(login, null)) {
             return userRepository
-                .findOneWithAuthoritiesByEmailIgnoreCase(login)
+                .findOneWithAuthorityByEmailIgnoreCase(login)
                 .map(user -> createSpringSecurityUser(login, user))
                 .orElseThrow(() -> new UsernameNotFoundException("User with email " + login + " was not found in the database"));
         }
 
         String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
         return userRepository
-            .findOneWithAuthoritiesByLogin(lowercaseLogin)
+            .findOneWithAuthorityByLogin(lowercaseLogin)
             .map(user -> createSpringSecurityUser(lowercaseLogin, user))
             .orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the database"));
     }
@@ -54,12 +54,10 @@ public class DomainUserDetailsService implements UserDetailsService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new UserNotActiveException("User " + lowercaseLogin + " status is not ACTIVE");
         }
-        List<GrantedAuthority> grantedAuthorities = user
-            .getAuthorities()
-            .stream()
-            .map(Authority::getName)
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
+        //lay 1 quyen duy nhat,khong dc sua GrantedAuthority vi springsecurity can thang nay
+        List<GrantedAuthority> grantedAuthorities = Collections.singletonList(
+            new SimpleGrantedAuthority(user.getAuthority().getName())
+        );
         return new org.springframework.security.core.userdetails.User(user.getLogin(), user.getPassword(), grantedAuthorities);
     }
 }

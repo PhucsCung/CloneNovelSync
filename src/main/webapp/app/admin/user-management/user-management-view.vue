@@ -39,11 +39,11 @@
           </dd>
           <dt><span v-text="$t('userManagement.profiles')">Profiles</span></dt>
           <dd>
-            <ul class="list-unstyled">
-              <li v-for="authority of user.authorities" :key="authority">
-                <b-badge variant="info">{{ authority }}</b-badge>
-              </li>
-            </ul>
+              <ul class="list-unstyled" v-if="user.authority">
+                  <li>
+                      <b-badge variant="info">{{ user.authority }}</b-badge>
+                  </li>
+              </ul>
           </dd>
         </dl>
         <router-link custom v-slot="{ navigate }" :to="{ name: 'JhiUser' }">

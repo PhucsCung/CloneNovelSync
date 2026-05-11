@@ -86,15 +86,18 @@ export default class AccountService {
   }
 
   public get userAuthorities(): any {
-    return this.store.getters.account?.authorities;
+    return this.store.getters.account?.authority;
   }
 
   private checkAuthorities(authorities: any): Promise<boolean> {
     if (this.userAuthorities) {
-      for (const authority of authorities) {
-        if (this.userAuthorities.includes(authority)) {
-          return Promise.resolve(true);
-        }
+      // authorities: Danh sách quyền yêu cầu của Menu (mảng)
+      // this.userAuthorities: Quyền duy nhất của User hiện tại (chuỗi)
+      console.log(authorities);
+      console.log(this.userAuthorities);
+
+      if (authorities.includes(this.userAuthorities)) {
+        return Promise.resolve(true);
       }
     }
     return Promise.resolve(false);

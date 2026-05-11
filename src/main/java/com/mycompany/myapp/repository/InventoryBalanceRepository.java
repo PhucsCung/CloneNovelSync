@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import javax.persistence.LockModeType;
 
 /**
  * Spring Data JPA repository for the InventoryBalance entity.
@@ -41,4 +43,8 @@ public interface InventoryBalanceRepository extends JpaRepository<InventoryBalan
     Optional<InventoryBalance> findOneWithToOneRelationships(@Param("id") Long id);
 
     Optional<InventoryBalance> findByBookId(Long bookId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM InventoryBalance i WHERE i.book.id = :bookId")
+    Optional<InventoryBalance> findLockedByBookId(@Param("bookId") Long bookId);
 }

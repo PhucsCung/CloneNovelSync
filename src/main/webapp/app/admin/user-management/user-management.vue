@@ -81,8 +81,8 @@
             </td>
             <td>{{ user.langKey }}</td>
             <td>
-              <div v-for="authority of user.authorities" :key="authority">
-                <span class="badge badge-info">{{ authority }}</span>
+              <div>
+                  <span class="badge badge-info" v-if="user.authority">{{ user.authority }}</span>
               </div>
             </td>
             <td v-if="user.createdDate">{{ $d(Date.parse(user.createdDate), 'short') }}</td>

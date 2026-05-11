@@ -133,7 +133,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             Integer quantityToAdd = line.getQuantity();
 
             InventoryBalance balance = inventoryBalanceRepository
-                .findByBookId(bookId)
+                .findLockedByBookId(bookId)
                 .orElse(new InventoryBalance().book(line.getBook()).quantityOnHand(0));
 
             balance.setQuantityOnHand(balance.getQuantityOnHand() + quantityToAdd);
