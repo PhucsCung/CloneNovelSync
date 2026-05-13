@@ -3,6 +3,8 @@ package com.mycompany.myapp.repository;
 import com.mycompany.myapp.domain.SalesOrderLine;
 import java.util.List;
 import java.util.Optional;
+
+import com.mycompany.myapp.service.dto.BookSalesReportDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -52,4 +54,14 @@ public interface SalesOrderLineRepository extends JpaRepository<SalesOrderLine, 
     boolean checkExistsByPublisherId(@Param("publisherId") Long publisherId);
 
     List<SalesOrderLine> findBySalesOrderId(Long id);
+    //câu select này là lấy các thành phần ở dưới nhét thẳng vòa hàm tạo dto nên không cần mapper gì nữa
+    @Query("SELECT new com.mycompany.myapp.service.dto.BookSalesReportDTO(" +
+        "b.id, b.code, b.title, SUM(l.quantity), SUM(l.quantity * l.unitPrice)) " +
+        "FROM SalesOrderLine l " +
+        "JOIN l.book b " +
+        "JOIN l.salesOrder o " +
+        "WHERE o.status = 'COMPLETED' " +
+        "GROUP BY b.id, b.code, b.title " +
+        "ORDER BY SUM(l.quantity) DESC") // Sắp xếp bán chạy nhất lên đầu
+    List<BookSalesReportDTO> getTopSellingBooksReport();
 }
