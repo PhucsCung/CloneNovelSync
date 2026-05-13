@@ -45,10 +45,9 @@ public class InventoryBalanceServiceImpl implements InventoryBalanceService {
     public InventoryBalanceDTO save(InventoryBalanceDTO inventoryBalanceDTO) {
         log.debug("Request to save InventoryBalance : {}", inventoryBalanceDTO);
         InventoryBalance inventoryBalance = inventoryBalanceMapper.toEntity(inventoryBalanceDTO);
-        Long bookId = inventoryBalanceDTO.getBook().getId();
-        bookRepository.findById(bookId).ifPresent(inventoryBalance::book);
         inventoryBalance = inventoryBalanceRepository.save(inventoryBalance);
         return inventoryBalanceMapper.toDto(inventoryBalance);
+
     }
 
     @Override
@@ -64,8 +63,6 @@ public class InventoryBalanceServiceImpl implements InventoryBalanceService {
     public InventoryBalanceDTO update(InventoryBalanceDTO inventoryBalanceDTO) {
         log.debug("Request to update InventoryBalance : {}", inventoryBalanceDTO);
         InventoryBalance inventoryBalance = inventoryBalanceMapper.toEntity(inventoryBalanceDTO);
-        Long bookId = inventoryBalanceDTO.getBook().getId();
-        bookRepository.findById(bookId).ifPresent(inventoryBalance::book);
         inventoryBalance = inventoryBalanceRepository.save(inventoryBalance);
         return inventoryBalanceMapper.toDto(inventoryBalance);
     }

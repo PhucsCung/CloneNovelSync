@@ -15,8 +15,13 @@ import com.mycompany.myapp.service.SalesOrderService;
 import com.mycompany.myapp.service.dto.SalesOrderDTO;
 import com.mycompany.myapp.service.mapper.SalesOrderMapper;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -128,11 +133,27 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             throw new BadRequestAlertException("Đơn xuất trống, không thể hoàn thành", "salesOrder", "emptyorder");
         }
 
+        //Dùng distinct để loại bỏ trùng lặp
+        List<Long> bookIds = lines.stream()
+            .map(line -> line.getBook().getId())
+            .distinct()
+            .collect(Collectors.toList());
+
+        List<InventoryBalance> existingBalances = inventoryBalanceRepository.findLockedByBookIdIn(bookIds);
+
+        Map<Long, InventoryBalance> balanceMap = existingBalances.stream()
+            .collect(Collectors.toMap(b -> b.getBook().getId(), b -> b));
+
+        List<InventoryTransaction> transactionsToSave = new ArrayList<>();
+        List<InventoryBalance> balancesToSave = new ArrayList<>();
+
         for (SalesOrderLine line : lines) {
             Long bookId = line.getBook().getId();
-            InventoryBalance balance = inventoryBalanceRepository
-                .findLockedByBookId(bookId)
-                .orElseThrow(() -> new BadRequestAlertException("Sách không có trong kho", "salesOrder", "outofstock"));
+            InventoryBalance balance = balanceMap.get(bookId);
+
+            if (balance == null) {
+                throw new BadRequestAlertException("Sách không có trong kho (BookID: " + bookId + ")", "salesOrder", "outofstock");
+            }
 
             if (balance.getQuantityOnHand() < line.getQuantity()) {
                 throw new BadRequestAlertException(
@@ -141,14 +162,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                     "insufficientstock"
                 );
             }
-        }
 
-        for (SalesOrderLine line : lines) {
-            Long bookId = line.getBook().getId();
-
-            InventoryBalance balance = inventoryBalanceRepository.findLockedByBookId(bookId).get();
             balance.setQuantityOnHand(balance.getQuantityOnHand() - line.getQuantity());
-            inventoryBalanceRepository.save(balance);
+            balancesToSave.add(balance);
 
             InventoryTransaction transaction = new InventoryTransaction();
             transaction.setTransactionType(TransactionType.OUT);
@@ -156,8 +172,11 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             transaction.setReferenceId(salesOrder.getId());
             transaction.setBook(line.getBook());
             transaction.setQuantity(line.getQuantity());
-            inventoryTransactionRepository.save(transaction);
+            transactionsToSave.add(transaction);
         }
+
+        inventoryBalanceRepository.saveAll(balancesToSave);
+        inventoryTransactionRepository.saveAll(transactionsToSave);
 
         salesOrder.setStatus(SalesStatus.COMPLETED);
         salesOrder = salesOrderRepository.save(salesOrder);

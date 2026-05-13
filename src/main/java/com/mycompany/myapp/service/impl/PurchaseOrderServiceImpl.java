@@ -15,8 +15,13 @@ import com.mycompany.myapp.service.PurchaseOrderService;
 import com.mycompany.myapp.service.dto.PurchaseOrderDTO;
 import com.mycompany.myapp.service.mapper.PurchaseOrderMapper;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -128,16 +133,29 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             throw new BadRequestAlertException("Đơn hàng trống, không thể hoàn thành", "purchaseOrder", "emptyorder");
         }
 
+        List<Long> bookIds = lines.stream()
+            .map(line -> line.getBook().getId())
+            .distinct()//dùng để tạo danh sách duy nhất không trùng lặp
+            .collect(Collectors.toList());
+
+        List<InventoryBalance> existingBalances = inventoryBalanceRepository.findLockedByBookIdIn(bookIds);
+
+        Map<Long, InventoryBalance> balanceMap = existingBalances.stream()
+            .collect(Collectors.toMap(b -> b.getBook().getId(), b -> b));
+
+        List<InventoryBalance> balancesToSave = new ArrayList<>();
+        List<InventoryTransaction> transactionsToSave = new ArrayList<>();
+
         for (PurchaseOrderLine line : lines) {
             Long bookId = line.getBook().getId();
             Integer quantityToAdd = line.getQuantity();
 
-            InventoryBalance balance = inventoryBalanceRepository
-                .findLockedByBookId(bookId)
-                .orElse(new InventoryBalance().book(line.getBook()).quantityOnHand(0));
+            // Lấy từ Map ra. Nếu là sách mới tinh chưa có trong Map -> Tạo mới InventoryBalance
+            InventoryBalance balance = balanceMap.getOrDefault(bookId,
+                new InventoryBalance().book(line.getBook()).quantityOnHand(0));
 
             balance.setQuantityOnHand(balance.getQuantityOnHand() + quantityToAdd);
-            inventoryBalanceRepository.save(balance);
+            balancesToSave.add(balance);
 
             InventoryTransaction transaction = new InventoryTransaction();
             transaction.setTransactionType(TransactionType.IN);
@@ -145,9 +163,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             transaction.setReferenceId(purchaseOrder.getId());
             transaction.setBook(line.getBook());
             transaction.setQuantity(quantityToAdd);
-
-            inventoryTransactionRepository.save(transaction);
+            transactionsToSave.add(transaction);
         }
+
+        inventoryBalanceRepository.saveAll(balancesToSave);
+        inventoryTransactionRepository.saveAll(transactionsToSave);
 
         purchaseOrder.setStatus(PurchaseStatus.COMPLETED);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);

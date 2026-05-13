@@ -45,6 +45,6 @@ public interface InventoryBalanceRepository extends JpaRepository<InventoryBalan
     Optional<InventoryBalance> findByBookId(Long bookId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT i FROM InventoryBalance i WHERE i.book.id = :bookId")
-    Optional<InventoryBalance> findLockedByBookId(@Param("bookId") Long bookId);
+    @Query("SELECT i FROM InventoryBalance i WHERE i.book.id IN :bookIds")
+    List<InventoryBalance> findLockedByBookIdIn(@Param("bookIds") List<Long> bookIds);
 }
