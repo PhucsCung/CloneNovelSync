@@ -44,6 +44,10 @@ public class InventoryBalance implements Serializable {
     @JoinColumn(name = "id")
     private Book book;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {
@@ -98,6 +102,19 @@ public class InventoryBalance implements Serializable {
         return this;
     }
 
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+    public InventoryBalance version(Long version) {
+        this.version = version;
+        return this;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
@@ -124,6 +141,7 @@ public class InventoryBalance implements Serializable {
             "id=" + getId() +
             ", quantityOnHand=" + getQuantityOnHand() +
             ", updatedAt='" + getUpdatedAt() + "'" +
+            ", version='" + getVersion() + "'" +
             "}";
     }
 }

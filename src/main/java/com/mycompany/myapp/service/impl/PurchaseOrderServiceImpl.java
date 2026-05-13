@@ -138,7 +138,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             .distinct()//dùng để tạo danh sách duy nhất không trùng lặp
             .collect(Collectors.toList());
 
-        List<InventoryBalance> existingBalances = inventoryBalanceRepository.findLockedByBookIdIn(bookIds);
+        List<InventoryBalance> existingBalances = inventoryBalanceRepository.findByBookIdIn(bookIds);
 
         Map<Long, InventoryBalance> balanceMap = existingBalances.stream()
             .collect(Collectors.toMap(b -> b.getBook().getId(), b -> b));
@@ -166,8 +166,17 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             transactionsToSave.add(transaction);
         }
 
-        inventoryBalanceRepository.saveAll(balancesToSave);
-        inventoryTransactionRepository.saveAll(transactionsToSave);
+        try {
+            inventoryBalanceRepository.saveAll(balancesToSave);
+            inventoryTransactionRepository.saveAll(transactionsToSave);
+        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            log.error("Xung đột dữ liệu tồn kho do có người thao tác cùng lúc trên phiếu nhập PO: {}", purchaseOrder.getCode(), e);
+            throw new BadRequestAlertException(
+                "Tồn kho của sách vừa thay đổi. Vui lòng F5 tải lại trang và xác nhận lại phiếu nhập!",
+                "purchaseOrder",
+                "inventoryConflict"
+            );
+        }
 
         purchaseOrder.setStatus(PurchaseStatus.COMPLETED);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);

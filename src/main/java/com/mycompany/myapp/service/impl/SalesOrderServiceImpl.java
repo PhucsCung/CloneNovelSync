@@ -139,7 +139,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             .distinct()
             .collect(Collectors.toList());
 
-        List<InventoryBalance> existingBalances = inventoryBalanceRepository.findLockedByBookIdIn(bookIds);
+        List<InventoryBalance> existingBalances = inventoryBalanceRepository.findByBookIdIn(bookIds);
 
         Map<Long, InventoryBalance> balanceMap = existingBalances.stream()
             .collect(Collectors.toMap(b -> b.getBook().getId(), b -> b));
@@ -175,8 +175,17 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             transactionsToSave.add(transaction);
         }
 
-        inventoryBalanceRepository.saveAll(balancesToSave);
-        inventoryTransactionRepository.saveAll(transactionsToSave);
+        try {
+            inventoryBalanceRepository.saveAll(balancesToSave);
+            inventoryTransactionRepository.saveAll(transactionsToSave);
+        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            log.error("Xung đột dữ liệu tồn kho do có người thao tác cùng lúc trên đơn hàng SO: {}", salesOrder.getCode(), e);
+            throw new BadRequestAlertException(
+                "Sách trong đơn hàng vừa được cập nhật kho bởi một nhân viên khác. Vui lòng F5 tải lại trang và thử lại!",
+                "salesOrder",
+                "inventoryConflict"
+            );
+        }
 
         salesOrder.setStatus(SalesStatus.COMPLETED);
         salesOrder = salesOrderRepository.save(salesOrder);

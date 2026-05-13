@@ -36,4 +36,5 @@
     <include file="config/liquibase/changelog/20260506153800_add_unique_constraint_to_category.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260506161600_update_default_users_status.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260507092000_update_all_users_to_active.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260513135700_add_version_to_inventory_balance.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>
