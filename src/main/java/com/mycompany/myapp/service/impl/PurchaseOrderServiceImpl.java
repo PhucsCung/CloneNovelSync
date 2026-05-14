@@ -1,16 +1,12 @@
 package com.mycompany.myapp.service.impl;
 
-import com.mycompany.myapp.domain.InventoryBalance;
-import com.mycompany.myapp.domain.InventoryTransaction;
-import com.mycompany.myapp.domain.PurchaseOrder;
-import com.mycompany.myapp.domain.PurchaseOrderLine;
+import com.mycompany.myapp.domain.*;
 import com.mycompany.myapp.domain.enumeration.PurchaseStatus;
 import com.mycompany.myapp.domain.enumeration.ReferenceType;
 import com.mycompany.myapp.domain.enumeration.TransactionType;
-import com.mycompany.myapp.repository.InventoryBalanceRepository;
-import com.mycompany.myapp.repository.InventoryTransactionRepository;
-import com.mycompany.myapp.repository.PurchaseOrderLineRepository;
-import com.mycompany.myapp.repository.PurchaseOrderRepository;
+import com.mycompany.myapp.repository.*;
+import com.mycompany.myapp.security.SecurityUtils;
+import com.mycompany.myapp.service.NotificationService;
 import com.mycompany.myapp.service.PurchaseOrderService;
 import com.mycompany.myapp.service.dto.PurchaseOrderDTO;
 import com.mycompany.myapp.service.mapper.PurchaseOrderMapper;
@@ -48,18 +44,26 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private final InventoryTransactionRepository inventoryTransactionRepository;
 
+    private final NotificationService notificationService;
+
+    private final UserRepository userRepository;
+
     public PurchaseOrderServiceImpl(
         PurchaseOrderRepository purchaseOrderRepository,
         PurchaseOrderMapper purchaseOrderMapper,
         PurchaseOrderLineRepository purchaseOrderLineRepository,
         InventoryBalanceRepository inventoryBalanceRepository,
-        InventoryTransactionRepository inventoryTransactionRepository
+        InventoryTransactionRepository inventoryTransactionRepository,
+        NotificationService notificationService,
+        UserRepository userRepository
     ) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderMapper = purchaseOrderMapper;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.inventoryBalanceRepository = inventoryBalanceRepository;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -67,12 +71,41 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         log.debug("Request to save PurchaseOrder : {}", purchaseOrderDTO);
         PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(purchaseOrderDTO);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);
+
+        final Long savedOrderId = purchaseOrder.getId();
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
+
+        if (currentUserLogin != null) {
+            // 1. Gửi cho Thủ kho
+            userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
+                notificationService.createNotification(
+                    "Phiếu nhập đang chờ duyệt",
+                    "Phiếu nhập nháp #" + savedOrderId + " đã được gửi. Vui lòng chờ sếp duyệt!",
+                    user.getId()
+                );
+            });
+
+            // 2. Gửi cho Admin
+            userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                notificationService.createNotification(
+                    "Có phiếu nhập mới cần duyệt",
+                    "Thủ kho " + currentUserLogin + " vừa tạo phiếu nhập #" + savedOrderId + ". Sếp vào duyệt nhé!",
+                    admin.getId()
+                );
+            });
+        }
+
         return purchaseOrderMapper.toDto(purchaseOrder);
     }
 
     @Override
     public PurchaseOrderDTO update(PurchaseOrderDTO purchaseOrderDTO) {
         log.debug("Request to update PurchaseOrder : {}", purchaseOrderDTO);
+
+        PurchaseOrder existingOrder = purchaseOrderRepository.findById(purchaseOrderDTO.getId())
+            .orElseThrow(()-> new BadRequestAlertException("Entity not found", "purchaseOrder", "idnotfound"));
+        purchaseOrderDTO.setStatus(existingOrder.getStatus());
+
         PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(purchaseOrderDTO);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);
         return purchaseOrderMapper.toDto(purchaseOrder);
@@ -85,6 +118,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return purchaseOrderRepository
             .findById(purchaseOrderDTO.getId())
             .map(existingPurchaseOrder -> {
+                purchaseOrderDTO.setStatus(null);
                 purchaseOrderMapper.partialUpdate(existingPurchaseOrder, purchaseOrderDTO);
 
                 return existingPurchaseOrder;
@@ -180,6 +214,16 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         purchaseOrder.setStatus(PurchaseStatus.COMPLETED);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);
+
+        User creator = purchaseOrder.getUser();
+
+        if (creator != null && creator.getId() != null) {
+            notificationService.createNotification(
+                "Phiếu nhập đã được duyệt!",
+                "Sếp đã duyệt phiếu nhập #" + purchaseOrder.getId() + " của bạn. Sách đã được cộng vào kho thành công!",
+                creator.getId()
+            );
+        }
 
         return purchaseOrderMapper.toDto(purchaseOrder);
     }

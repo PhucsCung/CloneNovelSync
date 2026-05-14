@@ -94,6 +94,7 @@ public class CacheConfiguration {
             createCache(cm, com.mycompany.myapp.domain.SalesOrderLine.class.getName(), jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.InventoryBalance.class.getName(), jcacheConfiguration);
             createCache(cm, com.mycompany.myapp.domain.InventoryTransaction.class.getName(), jcacheConfiguration);
+            createCache(cm, com.mycompany.myapp.domain.Notification.class.getName(), jcacheConfiguration);
             // jhipster-needle-redis-add-entry
         };
     }

@@ -5,6 +5,7 @@ import com.mycompany.myapp.repository.InventoryBalanceRepository;
 import com.mycompany.myapp.repository.InventoryTransactionRepository;
 import com.mycompany.myapp.repository.SalesOrderLineRepository;
 import com.mycompany.myapp.repository.SalesOrderRepository;
+import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.service.SalesOrderQueryService;
 import com.mycompany.myapp.service.SalesOrderService;
 import com.mycompany.myapp.service.criteria.SalesOrderCriteria;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tech.jhipster.web.util.HeaderUtil;
@@ -82,6 +84,7 @@ public class SalesOrderResource {
     }
 
     @PostMapping("/sales-orders/{id}/complete")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<SalesOrderDTO> completeSalesOrder(@PathVariable Long id) {
         log.debug("REST request to complete SalesOrder : {}", id);
         SalesOrderDTO result = salesOrderService.completeOrder(id);

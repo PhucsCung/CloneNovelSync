@@ -213,6 +213,24 @@ public class UserService {
             .map(AdminUserDTO::new);
     }
 
+    /**
+     * Update strictly the authority (role) of a user.
+     *
+     * @param login the login of the user.
+     * @param authorityName the new authority.
+     * @return updated user.
+     */
+    public Optional<AdminUserDTO> updateUserAuthority(String login, String authorityName) {
+        return userRepository.findOneByLogin(login.toLowerCase())
+            .map(user -> {
+                authorityRepository.findById(authorityName).ifPresent(user::setAuthority);
+                this.clearUserCaches(user);
+                log.debug("Changed Authority for User: {} to {}", user.getLogin(), authorityName);
+                return user;
+            })
+            .map(AdminUserDTO::new);
+    }
+
     public void deleteUser(String login) {
         userRepository
             .findOneByLogin(login)

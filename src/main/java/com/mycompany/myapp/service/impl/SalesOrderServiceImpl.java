@@ -1,16 +1,12 @@
 package com.mycompany.myapp.service.impl;
 
-import com.mycompany.myapp.domain.InventoryBalance;
-import com.mycompany.myapp.domain.InventoryTransaction;
-import com.mycompany.myapp.domain.SalesOrder;
-import com.mycompany.myapp.domain.SalesOrderLine;
+import com.mycompany.myapp.domain.*;
 import com.mycompany.myapp.domain.enumeration.ReferenceType;
 import com.mycompany.myapp.domain.enumeration.SalesStatus;
 import com.mycompany.myapp.domain.enumeration.TransactionType;
-import com.mycompany.myapp.repository.InventoryBalanceRepository;
-import com.mycompany.myapp.repository.InventoryTransactionRepository;
-import com.mycompany.myapp.repository.SalesOrderLineRepository;
-import com.mycompany.myapp.repository.SalesOrderRepository;
+import com.mycompany.myapp.repository.*;
+import com.mycompany.myapp.security.SecurityUtils;
+import com.mycompany.myapp.service.NotificationService;
 import com.mycompany.myapp.service.SalesOrderService;
 import com.mycompany.myapp.service.dto.SalesOrderDTO;
 import com.mycompany.myapp.service.mapper.SalesOrderMapper;
@@ -48,18 +44,26 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     private final InventoryTransactionRepository inventoryTransactionRepository;
 
+    private final NotificationService notificationService;
+
+    private final UserRepository userRepository;
+
     public SalesOrderServiceImpl(
         SalesOrderRepository salesOrderRepository,
         SalesOrderMapper salesOrderMapper,
         SalesOrderLineRepository salesOrderLineRepository,
         InventoryBalanceRepository inventoryBalanceRepository,
-        InventoryTransactionRepository inventoryTransactionRepository
+        InventoryTransactionRepository inventoryTransactionRepository,
+        NotificationService notificationService,
+        UserRepository userRepository
     ) {
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderMapper = salesOrderMapper;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.inventoryBalanceRepository = inventoryBalanceRepository;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -67,12 +71,41 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         log.debug("Request to save SalesOrder : {}", salesOrderDTO);
         SalesOrder salesOrder = salesOrderMapper.toEntity(salesOrderDTO);
         salesOrder = salesOrderRepository.save(salesOrder);
+        final Long savedOrderId = salesOrder.getId();
+
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
+
+        if (currentUserLogin != null) {
+            // 1. Gửi thông báo cho Nhân viên
+            userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
+                notificationService.createNotification(
+                    "Đơn hàng đang chờ duyệt",
+                    "Đơn hàng nháp #" + savedOrderId + " của bạn đã được gửi. Vui lòng chờ sếp duyệt!",
+                    user.getId()
+                );
+            });
+
+            // 2. Gửi thông báo cho Admin
+            userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                notificationService.createNotification(
+                    "Có đơn hàng mới cần duyệt",
+                    "Nhân viên " + currentUserLogin + " vừa tạo đơn hàng #" + savedOrderId + ". Sếp vào duyệt nhé!",
+                    admin.getId()
+                );
+            });
+        }
+
         return salesOrderMapper.toDto(salesOrder);
     }
 
     @Override
     public SalesOrderDTO update(SalesOrderDTO salesOrderDTO) {
         log.debug("Request to update SalesOrder : {}", salesOrderDTO);
+
+        SalesOrder existingOrder = salesOrderRepository.findById(salesOrderDTO.getId())
+            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "salesOrder", "idnotfound"));
+        salesOrderDTO.setStatus(existingOrder.getStatus());
+
         SalesOrder salesOrder = salesOrderMapper.toEntity(salesOrderDTO);
         salesOrder = salesOrderRepository.save(salesOrder);
         return salesOrderMapper.toDto(salesOrder);
@@ -85,6 +118,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return salesOrderRepository
             .findById(salesOrderDTO.getId())
             .map(existingSalesOrder -> {
+                // Xóa status khỏi DTO trước khi map để giữ nguyên status cũ
+                salesOrderDTO.setStatus(null);
                 salesOrderMapper.partialUpdate(existingSalesOrder, salesOrderDTO);
 
                 return existingSalesOrder;
@@ -189,6 +224,16 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
         salesOrder.setStatus(SalesStatus.COMPLETED);
         salesOrder = salesOrderRepository.save(salesOrder);
+
+        User creator = salesOrder.getUser();
+
+        if (creator != null && creator.getId() != null) {
+            notificationService.createNotification(
+                "Đơn hàng đã được duyệt!",
+                "Chúc mừng! Đơn hàng #" + salesOrder.getCode() + " của bạn đã được sếp duyệt và xuất kho thành công.",
+                creator.getId() // Lấy thẳng ID của người tạo đơn
+            );
+        }
 
         return salesOrderMapper.toDto(salesOrder);
     }

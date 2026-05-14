@@ -87,6 +87,7 @@ public class SecurityConfiguration {
             .antMatchers(HttpMethod.DELETE,"/api/books/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.THU_KHO)
             .antMatchers(HttpMethod.GET, "/api/books/**").authenticated()
             .antMatchers("/api/reports/**").hasAuthority(AuthoritiesConstants.ADMIN)
+            .antMatchers("/api/sales-orders/**").hasAnyAuthority(AuthoritiesConstants.SALES)
             .antMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
             .antMatchers("/api/**").authenticated()
             .antMatchers("/management/health").permitAll()

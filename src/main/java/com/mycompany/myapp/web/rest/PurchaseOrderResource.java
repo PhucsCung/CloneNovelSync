@@ -2,6 +2,7 @@ package com.mycompany.myapp.web.rest;
 
 import com.mycompany.myapp.domain.enumeration.PurchaseStatus;
 import com.mycompany.myapp.repository.PurchaseOrderRepository;
+import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.service.PurchaseOrderQueryService;
 import com.mycompany.myapp.service.PurchaseOrderService;
 import com.mycompany.myapp.service.criteria.PurchaseOrderCriteria;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tech.jhipster.web.util.HeaderUtil;
@@ -65,6 +67,7 @@ public class PurchaseOrderResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/purchase-orders")
+    @PreAuthorize("hasAnyAuthority(\"" + AuthoritiesConstants.THU_KHO + "\", \"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<PurchaseOrderDTO> createPurchaseOrder(@Valid @RequestBody PurchaseOrderDTO purchaseOrderDTO)
         throws URISyntaxException {
         log.debug("REST request to save PurchaseOrder : {}", purchaseOrderDTO);
@@ -81,6 +84,7 @@ public class PurchaseOrderResource {
     }
 
     @PostMapping("/purchase-orders/{id}/complete")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<PurchaseOrderDTO> completePurchaseOrder(@PathVariable Long id) {
         log.debug("REST request to complete PurchaseOrder : {}", id);
         PurchaseOrderDTO result = purchaseOrderService.completeOrder(id);

@@ -236,4 +236,27 @@ public class UserResource {
         userService.deleteUser(login);
         return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build();
     }
+
+    /**
+     * {@code PATCH /admin/users/:login/authority} : Updates strictly the authority of an existing User.
+     *
+     * @param login the login of the user to update.
+     * @param authorityName the new authority string (e.g., "ROLE_SALES").
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated user.
+     */
+    @PatchMapping("/users/{login}/authority")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<AdminUserDTO> updateUserAuthority(
+        @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
+        @RequestBody String authorityName
+    ) {
+        log.debug("REST request to update User Authority for : {} to {}", login, authorityName);
+
+        Optional<AdminUserDTO> updatedUser = userService.updateUserAuthority(login, authorityName);
+
+        return ResponseUtil.wrapOrNotFound(
+            updatedUser,
+            HeaderUtil.createAlert(applicationName, "userManagement.updated", login)
+        );
+    }
 }
