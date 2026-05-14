@@ -76,11 +76,11 @@ public class PurchaseOrderResource {
         }
         PurchaseOrderDTO order = purchaseOrderDTO;
         order.setStatus(PurchaseStatus.DRAFT);
-        purchaseOrderService.save(order);
+        PurchaseOrderDTO result = purchaseOrderService.save(order);
         return ResponseEntity
-            .created(new URI("/api/purchase-orders/" + order.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, order.getId().toString()))
-            .body(order);
+            .created(new URI("/api/purchase-orders/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     @PostMapping("/purchase-orders/{id}/complete")

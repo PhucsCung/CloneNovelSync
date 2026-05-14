@@ -18,6 +18,8 @@ import org.springframework.web.filter.CorsFilter;
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 import tech.jhipster.config.JHipsterProperties;
 
+import static com.mycompany.myapp.security.AuthoritiesConstants.*;
+
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @Import(SecurityProblemSupport.class)
@@ -82,19 +84,20 @@ public class SecurityConfiguration {
             .antMatchers("/api/activate").permitAll()
             .antMatchers("/api/account/reset-password/init").permitAll()
             .antMatchers("/api/account/reset-password/finish").permitAll()
-            .antMatchers(HttpMethod.POST, "/api/books/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.THU_KHO)
-            .antMatchers(HttpMethod.PUT, "/api/books/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.THU_KHO)
-            .antMatchers(HttpMethod.DELETE,"/api/books/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.THU_KHO)
+            .antMatchers(HttpMethod.POST, "/api/books/**").hasAnyAuthority(ADMIN, THU_KHO, SALES)
+            .antMatchers(HttpMethod.PUT, "/api/books/**").hasAnyAuthority(ADMIN, THU_KHO, SALES)
+            .antMatchers(HttpMethod.DELETE,"/api/books/**").hasAnyAuthority(ADMIN, THU_KHO, SALES)
             .antMatchers(HttpMethod.GET, "/api/books/**").authenticated()
-            .antMatchers("/api/reports/**").hasAuthority(AuthoritiesConstants.ADMIN)
-            .antMatchers("/api/sales-orders/**").hasAnyAuthority(AuthoritiesConstants.SALES)
-            .antMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
+            .antMatchers("/api/purchase-orders/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.THU_KHO)
+            .antMatchers("/api/reports/**").hasAuthority(ADMIN)
+            .antMatchers("/api/sales-orders/**").hasAnyAuthority(SALES)
+            .antMatchers("/api/admin/**").hasAuthority(ADMIN)
             .antMatchers("/api/**").authenticated()
             .antMatchers("/management/health").permitAll()
             .antMatchers("/management/health/**").permitAll()
             .antMatchers("/management/info").permitAll()
             .antMatchers("/management/prometheus").permitAll()
-            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
+            .antMatchers("/management/**").hasAuthority(ADMIN)
         .and()
             .httpBasic()
         .and()

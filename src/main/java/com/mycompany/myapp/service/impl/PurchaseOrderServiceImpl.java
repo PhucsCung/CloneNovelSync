@@ -71,8 +71,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         log.debug("Request to save PurchaseOrder : {}", purchaseOrderDTO);
         PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(purchaseOrderDTO);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);
-
         final Long savedOrderId = purchaseOrder.getId();
+
         String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
 
         if (currentUserLogin != null) {

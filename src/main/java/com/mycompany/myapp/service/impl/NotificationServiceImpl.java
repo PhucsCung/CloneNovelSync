@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,15 +29,18 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public NotificationServiceImpl(
         NotificationRepository notificationRepository,
         NotificationMapper notificationMapper,
-        UserRepository userRepository
+        UserRepository userRepository,
+        SimpMessagingTemplate messagingTemplate
     ) {
         this.notificationRepository = notificationRepository;
         this.notificationMapper = notificationMapper;
         this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -50,7 +54,24 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setRecipientId(recipientId);
 
         notification = notificationRepository.save(notification);
-        return notificationMapper.toDto(notification);
+        NotificationDTO dto = notificationMapper.toDto(notification);
+
+        //BẮN WEBSOCKET NGAY LẬP TỨC
+        if (recipientId != null) {
+            // Trường hợp 1: Có ID người nhận -> Gửi riêng cho người đó
+            userRepository.findById(recipientId).ifPresent(user -> {
+                messagingTemplate.convertAndSendToUser(
+                    user.getLogin(),          // Gửi đích danh theo username (ví dụ: "admin", "thukho")
+                    "/queue/notification",    // Kênh nhận tin nhắn riêng
+                    dto                       // Cục dữ liệu JSON đẩy đi
+                );
+            });
+        } else {
+            // Trường hợp 2: Không có ID -> Gửi thông báo chung cho toàn hệ thống
+            messagingTemplate.convertAndSend("/topic/notification", dto);
+        }
+
+        return dto;
     }
 
     @Override
