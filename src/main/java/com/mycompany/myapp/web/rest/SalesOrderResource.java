@@ -9,6 +9,7 @@ import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.service.SalesOrderQueryService;
 import com.mycompany.myapp.service.SalesOrderService;
 import com.mycompany.myapp.service.criteria.SalesOrderCriteria;
+import com.mycompany.myapp.service.dto.SalesOrderCreationRequest;
 import com.mycompany.myapp.service.dto.SalesOrderDTO;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
@@ -65,18 +66,19 @@ public class SalesOrderResource {
     /**
      * {@code POST  /sales-orders} : Create a new salesOrder.
      *
-     * @param salesOrderDTO the salesOrderDTO to create.
+     * @RequestBody SalesOrderCreationRequest the SalesOrderCreationRequest to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new salesOrderDTO, or with status {@code 400 (Bad Request)} if the salesOrder has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/sales-orders")
-    public ResponseEntity<SalesOrderDTO> createSalesOrder(@Valid @RequestBody SalesOrderDTO salesOrderDTO) throws URISyntaxException {
-        log.debug("REST request to save SalesOrder : {}", salesOrderDTO);
-        if (salesOrderDTO.getId() != null) {
-            throw new BadRequestAlertException("A new salesOrder cannot already have an ID", ENTITY_NAME, "idexists");
-        }
-        salesOrderDTO.setStatus(SalesStatus.DRAFT);
-        SalesOrderDTO result = salesOrderService.save(salesOrderDTO);
+    @PreAuthorize("hasAnyAuthority(\"" + AuthoritiesConstants.SALES + "\", \"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<SalesOrderDTO> createSalesOrder(
+        @Valid @RequestBody SalesOrderCreationRequest request) throws URISyntaxException {
+
+        log.debug("REST request to create SalesOrder with lines : {}", request.getCode());
+
+        SalesOrderDTO result = salesOrderService.createWithLines(request);
+
         return ResponseEntity
             .created(new URI("/api/sales-orders/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))

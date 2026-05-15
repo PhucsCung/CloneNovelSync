@@ -47,7 +47,7 @@ public class SalesOrder implements Serializable {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @OneToMany(mappedBy = "salesOrder")
+    @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "book", "salesOrder" }, allowSetters = true)
     private Set<SalesOrderLine> lines = new HashSet<>();

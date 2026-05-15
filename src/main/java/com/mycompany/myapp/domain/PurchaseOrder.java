@@ -43,7 +43,8 @@ public class PurchaseOrder implements Serializable {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @OneToMany(mappedBy = "purchaseOrder")
+    //orphanRemoval xoá thằng cha thì thằng con tự động xóa,cascade thác nước
+    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "book", "purchaseOrder" }, allowSetters = true)
     private Set<PurchaseOrderLine> lines = new HashSet<>();

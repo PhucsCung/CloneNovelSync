@@ -249,14 +249,12 @@ public class UserResource {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<AdminUserDTO> updateUserAuthority(
         @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
-        @Valid @RequestBody AuthorityUpdateDTO authorityDTO // <--- SỬA CHỖ NÀY: Dùng DTO thay vì String
+        @Valid @RequestBody AuthorityUpdateDTO authorityDTO
     ) {
-        // Lấy cái String quyền từ trong DTO ra
         String newAuthority = authorityDTO.getAuthority();
 
         log.debug("REST request to update User Authority for : {} to {}", login, newAuthority);
 
-        // Truyền cái String đó vào cho UserService xử lý như cũ
         Optional<AdminUserDTO> updatedUser = userService.updateUserAuthority(login, newAuthority);
 
         return ResponseUtil.wrapOrNotFound(

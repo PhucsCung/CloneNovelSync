@@ -8,14 +8,13 @@ import com.mycompany.myapp.repository.*;
 import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.NotificationService;
 import com.mycompany.myapp.service.PurchaseOrderService;
+import com.mycompany.myapp.service.dto.PurchaseOrderCreationRequest;
 import com.mycompany.myapp.service.dto.PurchaseOrderDTO;
 import com.mycompany.myapp.service.mapper.PurchaseOrderMapper;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -48,6 +47,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private final UserRepository userRepository;
 
+    private final BookRepository bookRepository;
+
     public PurchaseOrderServiceImpl(
         PurchaseOrderRepository purchaseOrderRepository,
         PurchaseOrderMapper purchaseOrderMapper,
@@ -55,7 +56,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         InventoryBalanceRepository inventoryBalanceRepository,
         InventoryTransactionRepository inventoryTransactionRepository,
         NotificationService notificationService,
-        UserRepository userRepository
+        UserRepository userRepository,
+        BookRepository bookRepository
     ) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderMapper = purchaseOrderMapper;
@@ -64,6 +66,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
+        this.bookRepository = bookRepository;
     }
 
     @Override
@@ -148,6 +151,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete PurchaseOrder : {}", id);
+        PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(id)
+            .orElseThrow(() -> new BadRequestAlertException("Không tìm thấy đơn hàng", "purchaseOrder", "notfound"));
+        if (purchaseOrder.getStatus() == PurchaseStatus.COMPLETED) {
+            throw new BadRequestAlertException(
+                "Không thể xóa đơn nhập kho đã hoàn thành vì sách đã được cộng vào kho!",
+                "purchaseOrder",
+                "cannotDeleteCompleted"
+            );
+        }
         purchaseOrderRepository.deleteById(id);
     }
 
@@ -226,5 +238,87 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
 
         return purchaseOrderMapper.toDto(purchaseOrder);
+    }
+
+    @Override
+    @Transactional
+    public PurchaseOrderDTO createWithLines(PurchaseOrderCreationRequest request) {
+        log.debug("Creating PurchaseOrder and Lines together for code: {}", request.getCode());
+
+        PurchaseOrder purchaseOrder = new PurchaseOrder();
+        purchaseOrder.setCode(request.getCode());
+        purchaseOrder.setStatus(PurchaseStatus.DRAFT);
+        purchaseOrder.setCreatedAt(java.time.Instant.now());
+
+        User userProxy = userRepository.getReferenceById(request.getUserId());
+        purchaseOrder.setUser(userProxy);
+
+        // Lưu Vỏ đơn để DB cấp cho cái ID
+        final PurchaseOrder savedOrder = purchaseOrderRepository.save(purchaseOrder);
+
+        Set<Long> bookIds = request.getItems().stream()
+            .map(PurchaseOrderCreationRequest.LineItemRequest::getBookId)
+            .collect(Collectors.toSet());
+
+        List<Book> books = bookRepository.findAllById(bookIds);
+
+        Map<Long, Book> bookMap = books.stream()
+            .collect(Collectors.toMap(Book::getId, b -> b));
+
+        List<PurchaseOrderLine> linesToSave = new ArrayList<>();
+        BigDecimal calculatedTotal = BigDecimal.ZERO;
+
+        for (PurchaseOrderCreationRequest.LineItemRequest item : request.getItems()) {
+            // Lấy sách ra từ cái Map trên RAM
+            Book book = bookMap.get(item.getBookId());
+            if (book == null) {
+                throw new BadRequestAlertException("Sách ID " + item.getBookId() + " không tồn tại", "purchaseOrder", "booknotfound");
+            }
+
+            PurchaseOrderLine line = new PurchaseOrderLine();
+            line.setPurchaseOrder(savedOrder);
+            line.setBook(book);
+            line.setQuantity(item.getQuantity());
+
+            BigDecimal unitPrice = book.getRetailPrice();
+            if (unitPrice == null) {
+                unitPrice = BigDecimal.ZERO;
+            }
+            line.setUnitCost(unitPrice);
+            BigDecimal lineTotal = unitPrice.multiply(new BigDecimal(item.getQuantity()));
+            calculatedTotal = calculatedTotal.add(lineTotal);
+            linesToSave.add(line);
+        }
+        purchaseOrderLineRepository.saveAll(linesToSave);
+
+        BigDecimal feTotalAmount = request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO;
+        if (feTotalAmount.compareTo(calculatedTotal) != 0) {
+            throw new BadRequestAlertException(
+                "Tổng tiền không khớp! Hệ thống tính: " + calculatedTotal + ", nhưng Front-end gửi lên: " + feTotalAmount,
+                "purchaseOrder",
+                "totalAmountMismatch"
+            );
+        }
+        savedOrder.setTotalAmount(calculatedTotal);
+
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
+        if (currentUserLogin != null) {
+            userRepository.findOneByLogin(currentUserLogin).ifPresent(u -> {
+                notificationService.createNotification(
+                    "Phiếu nhập đang chờ duyệt",
+                    "Phiếu nhập nháp #" + savedOrder.getId() + " đã được gửi. Vui lòng chờ sếp duyệt!",
+                    u.getId()
+                );
+            });
+            userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                notificationService.createNotification(
+                    "Có phiếu nhập mới cần duyệt",
+                    "Thủ kho " + currentUserLogin + " vừa tạo phiếu nhập #" + savedOrder.getId() + ". Sếp vào duyệt nhé!",
+                    admin.getId()
+                );
+            });
+        }
+
+        return purchaseOrderMapper.toDto(savedOrder);
     }
 }

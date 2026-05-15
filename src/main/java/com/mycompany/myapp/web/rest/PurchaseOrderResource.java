@@ -6,6 +6,7 @@ import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.service.PurchaseOrderQueryService;
 import com.mycompany.myapp.service.PurchaseOrderService;
 import com.mycompany.myapp.service.criteria.PurchaseOrderCriteria;
+import com.mycompany.myapp.service.dto.PurchaseOrderCreationRequest;
 import com.mycompany.myapp.service.dto.PurchaseOrderDTO;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
@@ -62,21 +63,18 @@ public class PurchaseOrderResource {
     /**
      * {@code POST  /purchase-orders} : Create a new purchaseOrder.
      *
-     * @param purchaseOrderDTO the purchaseOrderDTO to create.
+     * @RequestBody PurchaseOrderCreationRequest the PurchaseOrderCreationRequest to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new purchaseOrderDTO, or with status {@code 400 (Bad Request)} if the purchaseOrder has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/purchase-orders")
     @PreAuthorize("hasAnyAuthority(\"" + AuthoritiesConstants.THU_KHO + "\", \"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<PurchaseOrderDTO> createPurchaseOrder(@Valid @RequestBody PurchaseOrderDTO purchaseOrderDTO)
-        throws URISyntaxException {
-        log.debug("REST request to save PurchaseOrder : {}", purchaseOrderDTO);
-        if (purchaseOrderDTO.getId() != null) {
-            throw new BadRequestAlertException("A new purchaseOrder cannot already have an ID", ENTITY_NAME, "idexists");
-        }
-        PurchaseOrderDTO order = purchaseOrderDTO;
-        order.setStatus(PurchaseStatus.DRAFT);
-        PurchaseOrderDTO result = purchaseOrderService.save(order);
+    public ResponseEntity<PurchaseOrderDTO> createPurchaseOrder(
+        @Valid @RequestBody PurchaseOrderCreationRequest request) throws URISyntaxException {
+        log.debug("REST request to create PurchaseOrder with lines : {}", request.getCode());
+
+        PurchaseOrderDTO result = purchaseOrderService.createWithLines(request);
+
         return ResponseEntity
             .created(new URI("/api/purchase-orders/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))

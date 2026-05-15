@@ -8,14 +8,13 @@ import com.mycompany.myapp.repository.*;
 import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.NotificationService;
 import com.mycompany.myapp.service.SalesOrderService;
+import com.mycompany.myapp.service.dto.SalesOrderCreationRequest;
 import com.mycompany.myapp.service.dto.SalesOrderDTO;
 import com.mycompany.myapp.service.mapper.SalesOrderMapper;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -48,6 +47,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     private final UserRepository userRepository;
 
+    private final BookRepository bookRepository;
+
     public SalesOrderServiceImpl(
         SalesOrderRepository salesOrderRepository,
         SalesOrderMapper salesOrderMapper,
@@ -55,7 +56,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         InventoryBalanceRepository inventoryBalanceRepository,
         InventoryTransactionRepository inventoryTransactionRepository,
         NotificationService notificationService,
-        UserRepository userRepository
+        UserRepository userRepository,
+        BookRepository bookRepository
     ) {
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderMapper = salesOrderMapper;
@@ -64,6 +66,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
+        this.bookRepository = bookRepository;
     }
 
     @Override
@@ -149,6 +152,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete SalesOrder : {}", id);
+        SalesOrder salesOrder = salesOrderRepository.findById(id)
+            .orElseThrow(() -> new BadRequestAlertException("Không tìm thấy đơn hàng", "salesOrder", "notfound"));
+        if (salesOrder.getStatus() == SalesStatus.COMPLETED) {
+            throw new BadRequestAlertException(
+                "Không thể xóa đơn hàng đã hoàn thành vì sách đã được xuất kho!",
+                "salesOrder",
+                "cannotDeleteCompleted"
+            );
+        }
         salesOrderRepository.deleteById(id);
     }
 
@@ -236,5 +248,86 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         }
 
         return salesOrderMapper.toDto(salesOrder);
+    }
+
+    @Override
+    @Transactional
+    public SalesOrderDTO createWithLines(SalesOrderCreationRequest request) {
+        log.debug("Creating SalesOrder and Lines together for code: {}", request.getCode());
+
+        SalesOrder salesOrder = new SalesOrder();
+        salesOrder.setCode(request.getCode());
+        salesOrder.setStatus(SalesStatus.DRAFT);
+        salesOrder.setCreatedAt(java.time.Instant.now());
+
+        User userProxy = userRepository.getReferenceById(request.getUserId());
+        salesOrder.setUser(userProxy);
+
+        final SalesOrder savedOrder = salesOrderRepository.save(salesOrder);
+
+        Set<Long> bookIds = request.getItems().stream()
+            .map(SalesOrderCreationRequest.LineItemRequest::getBookId)
+            .collect(Collectors.toSet());
+
+        List<Book> books = bookRepository.findAllById(bookIds);
+
+        Map<Long, Book> bookMap = books.stream()
+            .collect(Collectors.toMap(Book::getId, b -> b));
+
+        List<SalesOrderLine> linesToSave = new ArrayList<>();
+        BigDecimal calculatedTotal = BigDecimal.ZERO;
+
+        for (SalesOrderCreationRequest.LineItemRequest item : request.getItems()) {
+            Book book = bookMap.get(item.getBookId());
+            if (book == null) {
+                throw new BadRequestAlertException("Sách ID " + item.getBookId() + " không tồn tại", "salesOrder", "booknotfound");
+            }
+
+            SalesOrderLine line = new SalesOrderLine();
+            line.setSalesOrder(savedOrder);
+            line.setBook(book);
+            line.setQuantity(item.getQuantity());
+
+            BigDecimal unitPrice = book.getRetailPrice();
+            if (unitPrice == null) {
+                unitPrice = BigDecimal.ZERO;
+            }
+            line.setUnitPrice(unitPrice);
+
+            BigDecimal lineTotal = unitPrice.multiply(new BigDecimal(item.getQuantity()));
+            calculatedTotal = calculatedTotal.add(lineTotal);
+
+            linesToSave.add(line);
+        }
+        salesOrderLineRepository.saveAll(linesToSave);
+
+        BigDecimal feTotalAmount = request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO;
+        if (feTotalAmount.compareTo(calculatedTotal) != 0) {
+            throw new BadRequestAlertException(
+                "Tổng tiền không khớp! Hệ thống tính: " + calculatedTotal + ", Front-end gửi: " + feTotalAmount,
+                "salesOrder",
+                "totalAmountMismatch"
+            );
+        }
+        savedOrder.setTotalAmount(calculatedTotal);
+
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
+        if (currentUserLogin != null) {
+            userRepository.findOneByLogin(currentUserLogin).ifPresent(u -> {
+                notificationService.createNotification(
+                    "Đơn hàng đang chờ duyệt",
+                    "Đơn hàng nháp #" + savedOrder.getId() + " đã được gửi. Vui lòng chờ sếp duyệt!",
+                    u.getId()
+                );
+            });
+            userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                notificationService.createNotification(
+                    "Có đơn hàng mới cần duyệt",
+                    "Nhân viên Sales " + currentUserLogin + " vừa tạo đơn #" + savedOrder.getId() + ".",
+                    admin.getId()
+                );
+            });
+        }
+        return salesOrderMapper.toDto(savedOrder);
     }
 }

@@ -1,5 +1,6 @@
 package com.mycompany.myapp.service;
 
+import com.mycompany.myapp.service.dto.SalesOrderCreationRequest;
 import com.mycompany.myapp.service.dto.SalesOrderDTO;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -65,4 +66,7 @@ public interface SalesOrderService {
     void delete(Long id);
 
     SalesOrderDTO completeOrder(Long id);
+
+    // Xử lý tạo đơn bán + chi tiết cùng lúc
+    SalesOrderDTO createWithLines(SalesOrderCreationRequest request);
 }

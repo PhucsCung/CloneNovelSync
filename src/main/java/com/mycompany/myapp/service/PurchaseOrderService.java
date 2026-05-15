@@ -1,5 +1,6 @@
 package com.mycompany.myapp.service;
 
+import com.mycompany.myapp.service.dto.PurchaseOrderCreationRequest;
 import com.mycompany.myapp.service.dto.PurchaseOrderDTO;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -65,4 +66,6 @@ public interface PurchaseOrderService {
     void delete(Long id);
 
     PurchaseOrderDTO completeOrder(Long id);
+    //xử lý tạo đơn + chi tiết cùng lúc
+    PurchaseOrderDTO createWithLines(PurchaseOrderCreationRequest request);
 }
