@@ -5,6 +5,7 @@ import com.mycompany.myapp.domain.enumeration.PurchaseStatus;
 import com.mycompany.myapp.domain.enumeration.ReferenceType;
 import com.mycompany.myapp.domain.enumeration.TransactionType;
 import com.mycompany.myapp.repository.*;
+import com.mycompany.myapp.security.AuthoritiesConstants;
 import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.NotificationService;
 import com.mycompany.myapp.service.PurchaseOrderService;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -149,6 +151,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public void delete(Long id) {
         log.debug("Request to delete PurchaseOrder : {}", id);
         PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(id)
@@ -232,7 +235,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         if (creator != null && creator.getId() != null) {
             notificationService.createNotification(
                 "Phiếu nhập đã được duyệt!",
-                "Sếp đã duyệt phiếu nhập #" + purchaseOrder.getId() + " của bạn. Sách đã được cộng vào kho thành công!",
+                "Sếp đã duyệt phiếu nhập " + purchaseOrder.getCode() + " của bạn. Sách đã được cộng vào kho thành công!",
                 creator.getId()
             );
         }
@@ -306,14 +309,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             userRepository.findOneByLogin(currentUserLogin).ifPresent(u -> {
                 notificationService.createNotification(
                     "Phiếu nhập đang chờ duyệt",
-                    "Phiếu nhập nháp #" + savedOrder.getId() + " đã được gửi. Vui lòng chờ sếp duyệt!",
+                    "Phiếu nhập nháp " + savedOrder.getCode() + " đã được gửi. Vui lòng chờ sếp duyệt!",
                     u.getId()
                 );
             });
             userRepository.findOneByLogin("admin").ifPresent(admin -> {
                 notificationService.createNotification(
                     "Có phiếu nhập mới cần duyệt",
-                    "Thủ kho " + currentUserLogin + " vừa tạo phiếu nhập #" + savedOrder.getId() + ". Sếp vào duyệt nhé!",
+                    "Thủ kho " + currentUserLogin + " vừa tạo phiếu nhập " + savedOrder.getCode() + ". Sếp vào duyệt nhé!",
                     admin.getId()
                 );
             });

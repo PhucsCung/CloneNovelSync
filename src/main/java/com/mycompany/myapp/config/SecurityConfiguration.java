@@ -99,7 +99,7 @@ public class SecurityConfiguration {
             .antMatchers(HttpMethod.POST, "/api/sales-orders/**").hasAnyAuthority(ADMIN, SALES)
             .antMatchers(HttpMethod.PUT, "/api/sales-orders/**").hasAnyAuthority(ADMIN, SALES)
             .antMatchers(HttpMethod.PATCH, "/api/sales-orders/**").hasAnyAuthority(ADMIN, SALES)
-            .antMatchers(HttpMethod.DELETE, "/api/sales-orders/**").hasAnyAuthority(ADMIN, SALES)
+            .antMatchers(HttpMethod.DELETE, "/api/sales-orders/**").hasAnyAuthority(ADMIN)
             .antMatchers("/api/reports/**").hasAuthority(ADMIN)
             .antMatchers("/api/admin/**").hasAuthority(ADMIN)
             .antMatchers("/api/**").authenticated()

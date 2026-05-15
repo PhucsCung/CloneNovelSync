@@ -74,7 +74,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         log.debug("Request to save SalesOrder : {}", salesOrderDTO);
         SalesOrder salesOrder = salesOrderMapper.toEntity(salesOrderDTO);
         salesOrder = salesOrderRepository.save(salesOrder);
-        final Long savedOrderId = salesOrder.getId();
+        final String savedOrderCode = salesOrder.getCode();
 
         String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
 
@@ -83,7 +83,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
                 notificationService.createNotification(
                     "Đơn hàng đang chờ duyệt",
-                    "Đơn hàng nháp #" + savedOrderId + " của bạn đã được gửi. Vui lòng chờ sếp duyệt!",
+                    "Đơn hàng nháp " + savedOrderCode + " của bạn đã được gửi. Vui lòng chờ sếp duyệt!",
                     user.getId()
                 );
             });
@@ -92,7 +92,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             userRepository.findOneByLogin("admin").ifPresent(admin -> {
                 notificationService.createNotification(
                     "Có đơn hàng mới cần duyệt",
-                    "Nhân viên " + currentUserLogin + " vừa tạo đơn hàng #" + savedOrderId + ". Sếp vào duyệt nhé!",
+                    "Nhân viên " + currentUserLogin + " vừa tạo đơn hàng " + savedOrderCode + ". Sếp vào duyệt nhé!",
                     admin.getId()
                 );
             });
@@ -161,6 +161,27 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 "cannotDeleteCompleted"
             );
         }
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse("Ai đó");
+        User creator = salesOrder.getUser();
+        String orderCode = salesOrder.getCode();
+        if (creator != null && creator.getId() != null) {
+            notificationService.createNotification(
+                "Đơn hàng đã bị hủy",
+                "Đơn bán hàng nháp " + orderCode + " đã bị xóa khỏi hệ thống bởi " + currentUserLogin + ".",
+                creator.getId()
+            );
+        }
+        // Gửi thông báo báo cáo cho Sếp (Admin)
+        userRepository.findOneByLogin("admin").ifPresent(admin -> {
+            // Tránh spam admin nếu chính admin là người xóa
+            if (!admin.getLogin().equals(currentUserLogin)) {
+                notificationService.createNotification(
+                    "Đơn bán hàng bị xóa",
+                    "Không duyệt đơn bán hàng nháp " + orderCode + ".",
+                    admin.getId()
+                );
+            }
+        });
         salesOrderRepository.deleteById(id);
     }
 
@@ -316,14 +337,14 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             userRepository.findOneByLogin(currentUserLogin).ifPresent(u -> {
                 notificationService.createNotification(
                     "Đơn hàng đang chờ duyệt",
-                    "Đơn hàng nháp #" + savedOrder.getId() + " đã được gửi. Vui lòng chờ sếp duyệt!",
+                    "Đơn hàng nháp " + savedOrder.getCode() + " đã được gửi. Vui lòng chờ sếp duyệt!",
                     u.getId()
                 );
             });
             userRepository.findOneByLogin("admin").ifPresent(admin -> {
                 notificationService.createNotification(
                     "Có đơn hàng mới cần duyệt",
-                    "Nhân viên Sales " + currentUserLogin + " vừa tạo đơn #" + savedOrder.getId() + ".",
+                    "Nhân viên Sales " + currentUserLogin + " vừa tạo đơn " + savedOrder.getCode() + ".",
                     admin.getId()
                 );
             });

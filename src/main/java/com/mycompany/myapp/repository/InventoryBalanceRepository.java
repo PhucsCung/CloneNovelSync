@@ -46,4 +46,6 @@ public interface InventoryBalanceRepository extends JpaRepository<InventoryBalan
 
     @Query("SELECT i FROM InventoryBalance i WHERE i.book.id IN :bookIds")
     List<InventoryBalance> findByBookIdIn(@Param("bookIds") List<Long> bookIds);
+
+    List<InventoryBalance> findByQuantityOnHandLessThan(Integer threshold);
 }
