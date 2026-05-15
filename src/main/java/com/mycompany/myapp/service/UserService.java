@@ -221,11 +221,17 @@ public class UserService {
      * @return updated user.
      */
     public Optional<AdminUserDTO> updateUserAuthority(String login, String authorityName) {
+        // 1. Dọn dẹp chuỗi: Xóa bỏ các ký tự thừa như ngoặc kép hoặc khoảng trắng nếu lỡ gửi kèm
+        String cleanAuthority = authorityName.replace("\"", "").trim();
+
         return userRepository.findOneByLogin(login.toLowerCase())
             .map(user -> {
-                authorityRepository.findById(authorityName).ifPresent(user::setAuthority);
+                Authority authority = authorityRepository.findById(cleanAuthority)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy quyền này trong Database: " + cleanAuthority));
+
+                user.setAuthority(authority);
                 this.clearUserCaches(user);
-                log.debug("Changed Authority for User: {} to {}", user.getLogin(), authorityName);
+                log.debug("Changed Authority for User: {} to {}", user.getLogin(), cleanAuthority);
                 return user;
             })
             .map(AdminUserDTO::new);

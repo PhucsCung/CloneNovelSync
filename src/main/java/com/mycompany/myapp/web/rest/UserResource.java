@@ -10,6 +10,7 @@ import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.MailService;
 import com.mycompany.myapp.service.UserService;
 import com.mycompany.myapp.service.dto.AdminUserDTO;
+import com.mycompany.myapp.service.dto.AuthorityUpdateDTO;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
 import com.mycompany.myapp.web.rest.errors.EmailAlreadyUsedException;
 import com.mycompany.myapp.web.rest.errors.LoginAlreadyUsedException;
@@ -241,18 +242,22 @@ public class UserResource {
      * {@code PATCH /admin/users/:login/authority} : Updates strictly the authority of an existing User.
      *
      * @param login the login of the user to update.
-     * @param authorityName the new authority string (e.g., "ROLE_SALES").
+     * @param authorityDTO the new authority covert to string (e.g., "ROLE_SALES").
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated user.
      */
     @PatchMapping("/users/{login}/authority")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<AdminUserDTO> updateUserAuthority(
         @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
-        @RequestBody String authorityName
+        @Valid @RequestBody AuthorityUpdateDTO authorityDTO // <--- SỬA CHỖ NÀY: Dùng DTO thay vì String
     ) {
-        log.debug("REST request to update User Authority for : {} to {}", login, authorityName);
+        // Lấy cái String quyền từ trong DTO ra
+        String newAuthority = authorityDTO.getAuthority();
 
-        Optional<AdminUserDTO> updatedUser = userService.updateUserAuthority(login, authorityName);
+        log.debug("REST request to update User Authority for : {} to {}", login, newAuthority);
+
+        // Truyền cái String đó vào cho UserService xử lý như cũ
+        Optional<AdminUserDTO> updatedUser = userService.updateUserAuthority(login, newAuthority);
 
         return ResponseUtil.wrapOrNotFound(
             updatedUser,
