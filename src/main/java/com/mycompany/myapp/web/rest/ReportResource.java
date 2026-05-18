@@ -3,6 +3,8 @@ package com.mycompany.myapp.web.rest;
 import com.mycompany.myapp.repository.SalesOrderLineRepository;
 import com.mycompany.myapp.service.ExcelReportService;
 import com.mycompany.myapp.service.dto.BookSalesReportDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reports")
 public class ReportResource {
+    private final Logger log = LoggerFactory.getLogger(ReportResource.class);
 
     private final SalesOrderLineRepository salesOrderLineRepository;
     private final ExcelReportService excelReportService;
@@ -29,6 +32,7 @@ public class ReportResource {
 
     @GetMapping("/top-selling-books/download")
     public ResponseEntity<Resource> downloadTopSellingBooksReport() {
+        log.info("yêu cầu xuất báo cáo sách bán chạy dạng Excel");
         List<BookSalesReportDTO> reportData = salesOrderLineRepository.getTopSellingBooksReport();
 
         ByteArrayInputStream in = excelReportService.generateBookSalesReport(reportData);
