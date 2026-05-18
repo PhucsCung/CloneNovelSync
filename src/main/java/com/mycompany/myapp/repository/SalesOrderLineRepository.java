@@ -61,9 +61,13 @@ public interface SalesOrderLineRepository extends JpaRepository<SalesOrderLine, 
         "JOIN l.book b " +
         "JOIN l.salesOrder o " +
         "WHERE o.status = 'COMPLETED' " +
+        "AND o.createdAt >= :startDate AND o.createdAt <= :endDate " + // <-- THÊM DÒNG NÀY ĐỂ FILTER THỜI GIAN
         "GROUP BY b.id, b.code, b.title " +
-        "ORDER BY SUM(l.quantity) DESC") // Sắp xếp bán chạy nhất lên đầu
-    List<BookSalesReportDTO> getTopSellingBooksReport();
+        "ORDER BY SUM(l.quantity) DESC")// sắp xếp theo giảm dần
+    List<BookSalesReportDTO> getTopSellingBooksReport(
+        @Param("startDate") java.time.Instant startDate,
+        @Param("endDate") java.time.Instant endDate
+    );
 
     // Lấy tổng số lượng bán được CỦA TẤT CẢ CÁC SÁCH trong 1 khoảng thời gian
     // Trả về danh sách mảng Object[], trong đó: index 0 là book.id, index 1 là Tổng số lượng
