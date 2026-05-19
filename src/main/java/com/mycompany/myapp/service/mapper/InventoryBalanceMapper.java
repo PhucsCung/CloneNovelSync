@@ -18,5 +18,9 @@ public interface InventoryBalanceMapper extends EntityMapper<InventoryBalanceDTO
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
     @Mapping(target = "title", source = "title")
+    @Mapping(target = "code", source = "code")
+    @Mapping(target = "author", source = "author")
+    @Mapping(target = "retailPrice", source = "retailPrice")
+    @Mapping(target = "status", source = "status")
     BookDTO toDtoBookTitle(Book book);
 }
