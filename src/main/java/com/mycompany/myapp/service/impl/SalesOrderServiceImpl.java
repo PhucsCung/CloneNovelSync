@@ -263,7 +263,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         if (creator != null && creator.getId() != null) {
             notificationService.createNotification(
                 "Đơn hàng đã được duyệt!",
-                "Chúc mừng! Đơn hàng #" + salesOrder.getCode() + " của bạn đã được sếp duyệt và xuất kho thành công.",
+                "Chúc mừng! Đơn hàng #" + salesOrder.getCode() + " của bạn đã được duyệt và xuất kho thành công.",
                 creator.getId() // Lấy thẳng ID của người tạo đơn
             );
         }

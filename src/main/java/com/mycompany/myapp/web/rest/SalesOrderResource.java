@@ -86,7 +86,7 @@ public class SalesOrderResource {
     }
 
     @PostMapping("/sales-orders/{id}/complete")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasAnyAuthority(\"" + AuthoritiesConstants.SALES + "\", \"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<SalesOrderDTO> completeSalesOrder(@PathVariable Long id) {
         log.debug("REST request to complete SalesOrder : {}", id);
         SalesOrderDTO result = salesOrderService.completeOrder(id);
