@@ -18,9 +18,10 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Endpoint để client kết nối qua thư viện SockJS
-        registry.addEndpoint("/websocket/tracker")
-            .setAllowedOrigins("*")
-            .withSockJS();
+        // 1. CỬA CHÍNH: Dành cho WebSocket thuần túy (ĐƯỜNG DẪN MỚI)
+        registry.addEndpoint("/websocket/stomp").setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000");
+
+        // 2. CỬA PHỤ: Dành cho SockJS (Đường dẫn cũ)
+        registry.addEndpoint("/websocket/tracker").setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000").withSockJS();
     }
 }
