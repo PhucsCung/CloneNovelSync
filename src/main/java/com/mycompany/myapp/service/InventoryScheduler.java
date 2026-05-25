@@ -36,8 +36,8 @@ public class InventoryScheduler {
      * Lịch chạy: 0 0 0 * * ? (Đúng 12h đêm mỗi ngày)
      * Ngưỡng cảnh báo: Dưới 10 cuốn
      */
-//    @Scheduled(cron = "0 0 0 * * ?")
-    @Scheduled(fixedRate = 60000)//1p gửi 1 lần
+    @Scheduled(cron = "0 0 0 * * ?")
+//    @Scheduled(fixedRate = 60000)//1p gửi 1 lần
     public void checkLowInventoryAndNotify() {
         log.info("Bắt đầu chạy Cron Job: Kiểm tra hàng tồn kho lúc nửa đêm...");
         //Quét kho tìm sách sắp hết (dưới 10 cuốn)

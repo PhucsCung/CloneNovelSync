@@ -52,8 +52,8 @@ public class InventoryAiJob {
         this.salesOrderLineRepository = salesOrderLineRepository;
     }
 
-    //    @Scheduled(cron = "0 0 2 * * ?") // 2h sáng
-    @Scheduled(fixedRate = 60000) // Test 1 phút
+        @Scheduled(cron = "0 0 2 * * ?") // 2h sáng
+//    @Scheduled(fixedRate = 60000) // Test 1 phút
     public void runDailyInventoryPrediction() {
         log.info("[AI-JOB] Bắt đầu quét kho với tốc độ ánh sáng (No N+1)...");
 

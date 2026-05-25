@@ -246,6 +246,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         try {
             inventoryBalanceRepository.saveAll(balancesToSave);
             inventoryTransactionRepository.saveAll(transactionsToSave);
+            inventoryBalanceRepository.flush();
+            inventoryTransactionRepository.flush();
         } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
             log.error("Xung đột dữ liệu tồn kho do có người thao tác cùng lúc trên đơn hàng SO: {}", salesOrder.getCode(), e);
             throw new BadRequestAlertException(

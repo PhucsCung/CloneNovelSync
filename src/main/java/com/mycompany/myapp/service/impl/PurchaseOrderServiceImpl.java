@@ -218,6 +218,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         try {
             inventoryBalanceRepository.saveAll(balancesToSave);
             inventoryTransactionRepository.saveAll(transactionsToSave);
+            inventoryBalanceRepository.flush();
+            inventoryTransactionRepository.flush();
         } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
             log.error("Xung đột dữ liệu tồn kho do có người thao tác cùng lúc trên phiếu nhập PO: {}", purchaseOrder.getCode(), e);
             throw new BadRequestAlertException(
