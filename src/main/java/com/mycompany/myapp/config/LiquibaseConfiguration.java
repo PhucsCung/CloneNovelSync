@@ -28,6 +28,7 @@ public class LiquibaseConfiguration {
         this.env = env;
     }
 
+    //luồng chạy ngầm tự đọngo cập nhập liquibase
     @Bean
     public SpringLiquibase liquibase(
         @Qualifier("taskExecutor") Executor executor,

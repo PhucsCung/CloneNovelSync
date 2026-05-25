@@ -68,6 +68,7 @@ public class CacheConfiguration {
         return RedissonConfiguration.fromInstance(Redisson.create(config), jcacheConfig);
     }
 
+    //này cấu hình hibernate không gọi db vội mà xem redis có chưa lấy từ redis
     @Bean
     public HibernatePropertiesCustomizer hibernatePropertiesCustomizer(javax.cache.CacheManager cm) {
         return hibernateProperties -> hibernateProperties.put(ConfigSettings.CACHE_MANAGER, cm);
