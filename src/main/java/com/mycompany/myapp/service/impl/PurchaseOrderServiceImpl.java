@@ -76,25 +76,30 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         log.debug("Request to save PurchaseOrder : {}", purchaseOrderDTO);
         PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(purchaseOrderDTO);
         purchaseOrder = purchaseOrderRepository.save(purchaseOrder);
-        final Long savedOrderId = purchaseOrder.getId();
+        final String savedOrderCode = purchaseOrder.getCode();
 
         String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
 
         if (currentUserLogin != null) {
-            // 1. Gửi cho Thủ kho
-            userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
-                notificationService.createNotification(
-                    "Phiếu nhập đang chờ duyệt",
-                    "Phiếu nhập nháp #" + savedOrderId + " đã được gửi. Vui lòng chờ sếp duyệt!",
-                    user.getId()
-                );
-            });
+            boolean isAdmin = "admin".equalsIgnoreCase(currentUserLogin);
+            if (!isAdmin) {
+                userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
+                    notificationService.createNotification(
+                        "Phiếu nhập đang chờ duyệt",
+                        "Phiếu nhập nháp #" + savedOrderCode + " đã được gửi. Vui lòng chờ sếp duyệt!",
+                        user.getId()
+                    );
+                });
+            }
 
-            // 2. Gửi cho Admin
             userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                String messageBody = isAdmin
+                    ? "Bạn vừa tạo phiếu nhập nháp #" + savedOrderCode + ". Hãy kiểm tra và duyệt nhé!"
+                    : "Thủ kho " + currentUserLogin + " vừa tạo phiếu nhập #" + savedOrderCode + ". Sếp vào duyệt nhé!";
+
                 notificationService.createNotification(
                     "Có phiếu nhập mới cần duyệt",
-                    "Thủ kho " + currentUserLogin + " vừa tạo phiếu nhập #" + savedOrderId + ". Sếp vào duyệt nhé!",
+                    messageBody,
                     admin.getId()
                 );
             });
@@ -237,7 +242,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         if (creator != null && creator.getId() != null) {
             notificationService.createNotification(
                 "Phiếu nhập đã được duyệt!",
-                "Sếp đã duyệt phiếu nhập " + purchaseOrder.getCode() + " của bạn. Sách đã được cộng vào kho thành công!",
+                "đã duyệt phiếu nhập " + purchaseOrder.getCode() + " của bạn. Sách đã được cộng vào kho thành công!",
                 creator.getId()
             );
         }

@@ -79,23 +79,34 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
 
         if (currentUserLogin != null) {
-            // 1. Gửi thông báo cho Nhân viên
-            userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
-                notificationService.createNotification(
-                    "Đơn hàng đang chờ duyệt",
-                    "Đơn hàng nháp " + savedOrderCode + " của bạn đã được gửi. Vui lòng chờ sếp duyệt!",
-                    user.getId()
-                );
-            });
+            boolean isAdmin = "admin".equalsIgnoreCase(currentUserLogin);
 
-            // 2. Gửi thông báo cho Admin
-            userRepository.findOneByLogin("admin").ifPresent(admin -> {
-                notificationService.createNotification(
-                    "Có đơn hàng mới cần duyệt",
-                    "Nhân viên " + currentUserLogin + " vừa tạo đơn hàng " + savedOrderCode + ". Sếp vào duyệt nhé!",
-                    admin.getId()
-                );
-            });
+            if (!isAdmin) {
+                userRepository.findOneByLogin(currentUserLogin).ifPresent(user -> {
+                    notificationService.createNotification(
+                        "Đơn hàng đang chờ duyệt",
+                        "Bạn vừa tạo đơn hàng nháp " + savedOrderCode + ". Hãy kiểm tra lại và bấm duyệt để xuất kho nhé!",
+                        user.getId()
+                    );
+                });
+
+                userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                    notificationService.createNotification(
+                        "Có đơn hàng mới cần duyệt",
+                        "Nhân viên " + currentUserLogin + " vừa tạo đơn hàng " + savedOrderCode + ". Sếp vào duyệt nhé!",
+                        admin.getId()
+                    );
+                });
+
+            } else {
+                userRepository.findOneByLogin("admin").ifPresent(admin -> {
+                    notificationService.createNotification(
+                        "Đơn hàng đang chờ duyệt",
+                        "Bạn vừa tạo đơn hàng nháp " + savedOrderCode + ". Hãy kiểm tra lại và bấm duyệt để xuất kho nhé!",
+                        admin.getId()
+                    );
+                });
+            }
         }
 
         return salesOrderMapper.toDto(salesOrder);
